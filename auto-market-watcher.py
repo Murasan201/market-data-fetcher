@@ -2,6 +2,8 @@
 import datetime
 import yfinance as yf
 import pandas as pd
+import os
+import requests
 
 # ——————————————
 # 表示設定：小数点以下2桁、カンマ区切り
@@ -32,6 +34,17 @@ def fetch_markets():
             }
     return pd.DataFrame(result).T
 
+def send_to_slack(df):
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    if not webhook_url:
+        raise ValueError("Environment variable SLACK_WEBHOOK_URL is not set")
+    # DataFrame をコードブロックとして整形
+    text = df.to_string()
+    payload = {"text": f"```\n{text}\n```"}
+    response = requests.post(webhook_url, json=payload)
+    response.raise_for_status()
+    print("Slackへの送信が完了しました")
+
 if __name__ == "__main__":
     df = fetch_markets()
-    print(df)
+    send_to_slack(df)
